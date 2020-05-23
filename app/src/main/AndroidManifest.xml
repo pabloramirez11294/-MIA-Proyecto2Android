@@ -12,7 +12,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".IndividualActivity"></activity>
+        <activity android:name=".Carrito"></activity>
+        <activity android:name=".IndividualActivity" />
         <activity android:name=".InicioActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>

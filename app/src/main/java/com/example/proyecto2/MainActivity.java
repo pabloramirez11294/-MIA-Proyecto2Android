@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void obtenerDatos(String correo,String clave) throws JSONException {
         Log.i("correo y clave ", correo+" " + clave);
-        String url ="http://192.168.0.5:3000/register/login";
+        String url ="http://192.168.43.36:3000/register/login";
         JSONObject jsonBody = new JSONObject();
         jsonBody.put("correo", correo);
         jsonBody.put("clave", clave);

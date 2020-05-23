@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 
+import android.widget.Button;
 import android.widget.ListView;
 
 import com.android.volley.Request;
@@ -33,11 +34,15 @@ public class InicioActivity extends AppCompatActivity {
     private ListView lv1;
     public ArrayList codigos;
     ArrayAdapter<String> adapter;
+    private Button btnCarrito;
+    private Button btnCerrarSesion;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inicio);
         lv1 = (ListView)findViewById(R.id.listProd);
+        btnCarrito=findViewById(R.id.btnCarrito);
+        btnCerrarSesion=findViewById(R.id.btnCerrarSesion);
         this.nombres=new ArrayList();
         this.codigos=new ArrayList();
         queue= Volley.newRequestQueue(this);
@@ -45,10 +50,25 @@ public class InicioActivity extends AppCompatActivity {
 
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,nombres);
         buscar("a");
+        btnCarrito.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(InicioActivity.this,Carrito.class);
+                intent.putExtra("TOKEN",token);
+                startActivity(intent);
+            }
+        });
+        btnCerrarSesion.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(InicioActivity.this,MainActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     private void buscar(String txt){
-        final String url = "http://192.168.0.5:3000/productos/buscar/"+txt;
+        final String url = "http://192.168.43.36:3000/productos/buscarTodos";
 
 
         JsonArrayRequest getRequest = new JsonArrayRequest(Request.Method.GET, url, null,

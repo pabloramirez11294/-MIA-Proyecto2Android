@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -18,57 +19,52 @@ import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import android.widget.ImageView;
 
 import java.io.UnsupportedEncodingException;
 
-public class IndividualActivity extends AppCompatActivity {
+public class Carrito extends AppCompatActivity {
+    private String token;
     private RequestQueue queue;
-    private TextView txtNombre;
-    private  TextView txtPrecio;
-    private  TextView txtCantidad;
-    private EditText editCantida;
-    private Button cantidad;
-    private TextView  textInfo;
-    String cod;
-    String token;
-    ImageView imageV;
+    private EditText textCarrito;
+    private TextView txtComprar;
+    private int[] codigos;
+    private int[] cantidades;
+    private Double[] subtotales;
+    private Button btnComprar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_individual);
-        editCantida =(EditText)findViewById(R.id.editCantidad);
-        imageV= (ImageView)findViewById(R.id.imageView);
-        txtNombre = (TextView)findViewById(R.id.txtNombre);
-        txtPrecio = (TextView)findViewById(R.id.txtPrecio);
-        txtCantidad = (TextView)findViewById(R.id.txtCantidad);
-        textInfo = (TextView)findViewById(R.id.textInfo);
-        queue= Volley.newRequestQueue(this);
-        cod = getIntent().getExtras().getString("COD");
+        setContentView(R.layout.activity_carrito);
+        textCarrito=findViewById(R.id.txtListado);
+        btnComprar=findViewById(R.id.btnComprar);
+        txtComprar=findViewById(R.id.txtComprar);
         token = getIntent().getExtras().getString("TOKEN");
-        buscar(cod);
+        queue= Volley.newRequestQueue(this);
+        getCarrito(token);
 
-        cantidad=(Button) findViewById(R.id.cmdCarrito);
-        cantidad.setOnClickListener(new View.OnClickListener() {
+        btnComprar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Double total=0.0;
+                for (int i=0;i<subtotales.length;i++){
+                    total+=subtotales[i];
+                }
                 try {
-                    agregarCarrito(Integer.parseInt(editCantida.getText().toString()));
-                } catch (Exception e) {
+                    Comprar(token,codigos,total,subtotales,cantidades);
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
             }
         });
+
     }
 
-    private void buscar(String txt){
-        final String url = "http://192.168.43.36:3000/productos/getProducto/"+txt;
+    private void getCarrito(String txt){
+        final String url = "http://192.168.43.36:3000/productos/getCarrito/"+txt;
 
 
         JsonArrayRequest getRequest = new JsonArrayRequest(Request.Method.GET, url, null,
@@ -80,18 +76,25 @@ public class IndividualActivity extends AppCompatActivity {
                         Log.d("Response", response.toString());
                         try{
                             // Loop through the array elements
-                            JSONArray otro=null;
+                            codigos=new int[response.length()];
+                            subtotales=new Double[response.length()];
+                            cantidades=new int[response.length()];
                             for(int i=0;i<response.length();i++){
                                 // Get current json object
-                                //JSONObject o =response.getJSONObject(i);
-                                 otro = response.getJSONArray(i);
+                                Object o =response.get(i);
+                                JSONArray otro = response.getJSONArray(i);
+
 
                                 Log.d("Objec ", otro.toString());
+                                textCarrito.setText(textCarrito.getText().toString() + otro.toString()+"\n");
+                                cantidades[i]=Integer.parseInt(otro.get(4).toString());
+                                codigos[i]=Integer.parseInt(otro.get(0).toString());
+                                subtotales[i]=Double.parseDouble(otro.get(5).toString());
+                                //nombres.add(i,otro.get(1)+" Precio: "+otro.get(4));
+                                //codigos.add(i,otro.get(0));
                             }
-                            txtNombre.setText(otro.get(1).toString());
-                            txtCantidad.setText(otro.get(6).toString());
-                            txtPrecio.setText(otro.get(4).toString());
-                            Picasso.get().load("http://192.168.43.36:3000/"+otro.get(2).toString()).into(imageV);
+
+
 
                         }catch (JSONException e){
                             Log.d("Error.Response", e.toString());
@@ -111,20 +114,29 @@ public class IndividualActivity extends AppCompatActivity {
         queue.add(getRequest);
     }
 
-    private void agregarCarrito(int cantidad) throws JSONException {
-        String url ="http://192.168.43.36:3000/productos/agregarCarrito";
+    private void Comprar(String id_comprador,int  codigos[],double total,Double subtotales[],int cantidades[]) throws JSONException {
+        JSONArray cods=new JSONArray(codigos);
+        JSONArray subtotalesJ=new JSONArray(subtotales);
+        JSONArray cantidadesJ=new JSONArray(cantidades);
+        Log.i("datos ", id_comprador+" " + cods+ " "+ total);
+        String url ="http://192.168.43.36:3000/productos/comprar";
         JSONObject jsonBody = new JSONObject();
-        jsonBody.put("id_u", token);
-        jsonBody.put("codigo", cod);
-        jsonBody.put("cantidad",cantidad);
+        jsonBody.put("id_comprador", id_comprador);
+        jsonBody.put("codigos", cods);
+        jsonBody.put("subtotales", subtotalesJ);
+        jsonBody.put("cantidades", cantidadesJ);
         final String mRequestBody = jsonBody.toString();
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 try {
-                    textInfo.setText("Se añadio al carrito exitosamente.");
+                    Log.i("datos ", response.toString());
+                    txtComprar.setText("Compara exitosa");
+                    textCarrito.setText("");
+                    getCarrito(token);
                 } catch (Exception e) {
-                    Log.e("LOG_RESPONSE",  e.toString());
+                    Log.i("Error ", e.toString());
+                    txtComprar.setText("Error al comprar.");
                 }
 
             }
@@ -132,7 +144,7 @@ public class IndividualActivity extends AppCompatActivity {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e("LOG_RESPONSE", error.toString());
-                textInfo.setText(error.toString());
+                txtComprar.setText("No se pudo comprar.");
             }
         }){
             @Override
